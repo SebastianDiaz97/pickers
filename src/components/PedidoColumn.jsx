@@ -1,21 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function PedidoColumn({ items, onFinalizar }) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredItems = searchQuery.trim()
+    ? items.filter((p) => p.nombre.toLowerCase().includes(searchQuery.toLowerCase()))
+    : items;
+
   return (
     <div className="column column-blue">
       <div className="column-header blue">
         <span>📦 En Pedido</span>
         <span className="badge">{items.length}</span>
       </div>
+      <div className="column-search">
+        <input
+          type="text"
+          className="search-input"
+          placeholder="🔍 Buscar por nombre..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
       <div className="column-body">
-        {items.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <p className="picker-list-empty">
-            📭 No hay pedidos asignados.<br />
-            Presiona "Asignar Pedido".
+            {searchQuery.trim()
+              ? '🔍 No se encontraron pickers con ese nombre.'
+              : '📭 No hay pedidos asignados.<br />Presiona "Asignar Pedido".'
+            }
           </p>
         ) : (
           <ul className="picker-list">
-            {items.map((picker) => (
+            {filteredItems.map((picker) => (
               <li key={picker.id} className="picker-item entering" data-id={picker.id}>
                 <span className="picker-status" />
                 <span className="name">{picker.nombre}</span>

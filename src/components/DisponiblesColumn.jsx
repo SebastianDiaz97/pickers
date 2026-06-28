@@ -1,10 +1,15 @@
-import React, { useRef, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useRef, useCallback, useLayoutEffect } from 'react';
 
 export default function DisponiblesColumn({ items, onSacarFuera, onReordenar, onMoverArriba, onLiberarPicker }) {
   const dragRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const listRef = useRef(null);
   const prevPositions = useRef({});
   const shouldAnimate = useRef(false);
+
+  const filteredItems = searchQuery.trim()
+    ? items.filter((p) => p.nombre.toLowerCase().includes(searchQuery.toLowerCase()))
+    : items;
 
   // ===================================================================
   // FLIP ANIMATION
@@ -162,15 +167,26 @@ export default function DisponiblesColumn({ items, onSacarFuera, onReordenar, on
         <span>✅ Disponibles</span>
         <span className="badge">{items.length}</span>
       </div>
+      <div className="column-search">
+        <input
+          type="text"
+          className="search-input"
+          placeholder="🔍 Buscar por nombre..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
       <div className="column-body">
-        {items.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <p className="picker-list-empty">
-            ✨ No hay pickers disponibles.<br />
-            Agrega uno arriba.
+            {searchQuery.trim()
+              ? '🔍 No se encontraron pickers con ese nombre.'
+              : '✨ No hay pickers disponibles.<br />Agrega uno arriba.'
+            }
           </p>
         ) : (
           <ul className="picker-list" ref={listRef}>
-            {items.map((picker, index) => {
+            {filteredItems.map((picker, index) => {
               const isDragging = picker.id === dragRef.current;
               return (
                 <li

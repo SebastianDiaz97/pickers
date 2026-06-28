@@ -25,10 +25,6 @@ function cargarEstadoLocal() {
  * @param {import('@supabase/supabase-js').SupabaseClient | null} supabaseClient
  * @param {Function} addToast
  */
-/**
- * @param {import('@supabase/supabase-js').SupabaseClient | null} supabaseClient
- * @param {Function} addToast
- */
 export function usePickers(supabaseClient, addToast) {
   const cargado = cargarEstadoLocal();
   const [pickers, setPickers] = useState(cargado?.pickers || []);
@@ -444,8 +440,6 @@ export function usePickers(supabaseClient, addToast) {
       const picker = pickers.find((p) => p.id === id);
       if (!picker) return;
 
-      const targetOrden = Math.max(...pickers.map((p) => p.orden || 0), 0) + 1;
-
       setFueraIds((prev) => {
         if (!prev.has(id)) return prev;
         const next = new Set(prev);
@@ -453,20 +447,17 @@ export function usePickers(supabaseClient, addToast) {
         return next;
       });
 
-      setPickers((prev) => {
-        const p = prev.find((p) => p.id === id);
-        if (!p) return prev;
-        const next = prev.filter((p) => p.id !== id);
-        next.push({ ...p, orden: targetOrden });
-        return next;
-      });
+      // Mantener el orden original — solo actualizar fuera: false in-place
+      setPickers((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, fuera: false } : p))
+      );
 
       addToast?.(`"${picker.nombre}" restaurado al turno`, 'success');
 
       syncToSupabase(async () => {
         const { error: err } = await supabaseClient
           .from('pickers')
-          .update({ fuera: false, orden: targetOrden })
+          .update({ fuera: false })
           .eq('id', id);
         if (err) throw err;
       });
@@ -481,13 +472,11 @@ export function usePickers(supabaseClient, addToast) {
       return;
     }
 
-    const baseOrden = Math.max(...pickers.map((p) => p.orden || 0), 0);
-
     setFueraIds(new Set());
+    // Mantener el orden original — solo actualizar fuera: false in-place
     setPickers((prev) => {
       const ids = new Set(lista.map((p) => p.id));
-      const rest = prev.filter((p) => !ids.has(p.id));
-      return [...rest, ...lista];
+      return prev.map((p) => (ids.has(p.id) ? { ...p, fuera: false } : p));
     });
 
     addToast?.(
@@ -497,15 +486,15 @@ export function usePickers(supabaseClient, addToast) {
 
     syncToSupabase(async () => {
       await Promise.all(
-        lista.map((p, i) =>
+        lista.map((p) =>
           supabaseClient
             .from('pickers')
-            .update({ fuera: false, orden: baseOrden + i + 1 })
+            .update({ fuera: false })
             .eq('id', p.id)
         )
       );
     });
-  }, [fuera, pickers, supabaseClient, addToast]);
+  }, [fuera, supabaseClient, addToast]);
 
   const toggleDisponiblePush = useCallback(
     (id) => {

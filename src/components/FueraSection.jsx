@@ -14,7 +14,7 @@ export default function FueraSection({ items, onRestaurar, onEliminar, onRestaur
       {!collapsed && (
         <div className="fuera-body">
           {items.map((picker) => (
-            <span key={picker.id} className="fuera-chip entering">
+            <span key={picker.id} className={`fuera-chip entering turno-${picker.turno || 'am'}`}>
               {picker.nombre}
               <button
                 className="btn-chip"

@@ -8,6 +8,43 @@ import ToastContainer from '../components/ToastContainer';
 
 const STORAGE_SELECTED = 'gestorPickerSelected';
 
+function PickerQueue({ disponibles, selectedId }) {
+  const [queueOpen, setQueueOpen] = useState(true);
+
+  return (
+    <div className="picker-queue-section">
+      <div
+        className="picker-queue-header picker-queue-header--clickable"
+        onClick={() => setQueueOpen((prev) => !prev)}
+      >
+        <span>
+          <span className={`picker-queue-chevron ${queueOpen ? 'open' : ''}`}>▶</span>
+          📋 Fila de disponibles
+        </span>
+        <span className="badge">{disponibles.length}</span>
+      </div>
+      {queueOpen && (
+        <ul className="picker-queue-list">
+          {disponibles.map((p, i) => (
+            <li
+              key={p.id}
+              className={`picker-queue-item${p.id === selectedId ? ' picker-queue-item--yo' : ''}`}
+            >
+              <span className="picker-queue-pos">{i + 1}</span>
+              <span className="picker-queue-name">
+                {p.id === selectedId ? '👉 ' : ''}{p.nombre}
+              </span>
+              <span className={"picker-queue-turno turno-" + (p.turno || 'am')}>
+                {p.turno === 'pm' ? '🌆 PM' : '☀️ AM'}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function PickerView() {
   const { toasts, addToast } = useToast();
 
@@ -18,9 +55,14 @@ export default function PickerView() {
   const {
     pickers,
     disponibles,
+    enPedido,
+    fuera,
     loading,
     toggleDisponiblePush,
   } = usePickers(supabase, null);
+
+  // Lista ordenada: disponibles → en pedido → fuera
+  const listaOrdenada = [...disponibles, ...enPedido, ...fuera];
 
   const {
     supported,
@@ -121,13 +163,13 @@ export default function PickerView() {
             <p className="picker-hint">
               El coordinador debe agregar pickers desde el panel de administración.
             </p>
-            <Link to="/" className="btn btn-outline">
+            <Link to="/coordinacion" className="btn btn-outline">
               🔑 Ir al panel del coordinador
             </Link>
           </div>
         ) : (
           <div className="picker-selector-grid">
-            {pickers.map((p) => {
+            {listaOrdenada.map((p) => {
               const enUso = p.disponible_push;
               return (
                 <button
@@ -138,12 +180,10 @@ export default function PickerView() {
                   title={enUso ? '🚫 Este picker ya está siendo usado en otro dispositivo' : `Seleccionar ${p.nombre}`}
                 >
                   <span className="picker-select-name">
-                    {enUso ? '🔒 ' : '👤 '}{p.nombre}
+                    👤 {p.nombre}
                   </span>
                   <span className="picker-select-status">
-                    {enUso
-                      ? '🔒 En uso'
-                      : p.fuera
+                    {p.fuera
                       ? '⏸️ Fuera'
                       : p.estado === 'pedido'
                       ? '📦 En pedido'
@@ -156,7 +196,7 @@ export default function PickerView() {
         )}
 
         <div className="picker-back-link">
-          <Link to="/" className="btn btn-outline">🔑 Acceso coordinador</Link>
+          <Link to="/coordinacion" className="btn btn-outline">🔑 Acceso coordinador</Link>
         </div>
       </div>
     );
@@ -195,6 +235,14 @@ export default function PickerView() {
               ? '✅ ¡Eres el próximo!'
               : `👥 ${miPosicion} picker${miPosicion !== 1 ? 's' : ''} antes que tú`}
           </p>
+        )}
+
+        {/* Cola de disponibles — solo si el picker está disponible */}
+        {selectedPicker.estado === 'disponible' && !selectedPicker.fuera && disponibles.length > 0 && (
+          <PickerQueue
+            disponibles={disponibles}
+            selectedId={selectedId}
+          />
         )}
 
         {/* Toggle Disponible / No disponible */}

@@ -5,19 +5,21 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import PickerView from './pages/PickerView';
 import ProtectedRoute from './components/ProtectedRoute';
+import InstallPrompt from './components/InstallPrompt';
 
 export default function App() {
-  const { session, user, loading, login, loginError, logout, isAuthenticated } =
+  const { user, loading, login, loginError, logout, isAuthenticated } =
     useAuth();
 
   return (
     <BrowserRouter>
+      <InstallPrompt />
       <Routes>
         <Route
           path="/login"
           element={
             isAuthenticated ? (
-              <Navigate to="/" replace />
+              <Navigate to="/coordinacion" replace />
             ) : (
               <Login onLogin={login} loginError={loginError} />
             )
@@ -25,6 +27,10 @@ export default function App() {
         />
         <Route
           path="/"
+          element={<Navigate to="/coordinacion" replace />}
+        />
+        <Route
+          path="/coordinacion"
           element={
             <ProtectedRoute
               isAuthenticated={isAuthenticated}
@@ -38,7 +44,7 @@ export default function App() {
           path="/picker"
           element={<PickerView />}
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/coordinacion" replace />} />
       </Routes>
     </BrowserRouter>
   );
